@@ -16,6 +16,7 @@ class JSONInput extends Component {
                 },
             },
             json: JSON.stringify(props.json, null, 4),
+            js: 'outputJSON = inputJSON;'
         };
     }
 
@@ -47,8 +48,26 @@ class JSONInput extends Component {
 
         try {
             const json = JSON.parse(rawJSON);
-            this.props.changeJSON(json);
+
+            // Filtering with user script
+            const userScript=this.refs.jsFilterScript.value.trim();
+            const code = `
+                let inputJSON = JSON.parse(\`${rawJSON}\`);
+                let outputJSON = '';
+                // default 'outputJSON = inputJSON;'
+                ${userScript}
+                return outputJSON;
+            `;
+
+            const iframe = document.getElementById('sandbox');
+            window.addEventListener('message', (event) => {
+                let filteredJSON = event.data;
+                this.props.changeJSON(filteredJSON);
+             }, { once: true });
+            iframe.contentWindow.postMessage(code, '*'); 
+            //this.props.changeJSON(json);
         } catch (e) {
+            console.log(e);
             this.setState({
                 errors: {
                     ...this.state.errors,
@@ -131,6 +150,13 @@ class JSONInput extends Component {
                         ref="rawJSON"
                         defaultValue={this.state.json}
                         className="json-input"
+                    ></textarea>
+                </div>
+                <div className="form-input">
+                    <textarea
+                        ref="jsFilterScript"
+                        defaultValue={this.state.js}
+                        className="js-input"
                     ></textarea>
                 </div>
                 <input

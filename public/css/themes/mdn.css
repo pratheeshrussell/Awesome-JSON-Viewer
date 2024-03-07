@@ -168,6 +168,7 @@ ul.json-dict li {
   margin-bottom: 20px;
 }
 
+.js-input,
 .json-input {
   box-sizing: border-box;
   width: 100%;

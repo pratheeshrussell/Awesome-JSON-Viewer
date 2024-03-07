@@ -180,7 +180,7 @@ ul.json-dict li {
 .form-input {
   margin-bottom: 20px;
 }
-
+.js-input,
 .json-input {
   box-sizing: border-box;
   width: 100%;

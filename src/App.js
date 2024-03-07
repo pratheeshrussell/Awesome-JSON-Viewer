@@ -12,7 +12,7 @@ class App extends Component {
         this.state = {
             selectedTab: 'tree',
             json: props.json,
-            selectedJSON: props.json,
+            selectedJSON: props.json
         };
         this.showLogInConsole();
         this.locationHashChanged = this.locationHashChanged.bind(this);

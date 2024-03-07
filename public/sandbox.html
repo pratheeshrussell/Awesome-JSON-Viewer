@@ -1,0 +1,11 @@
+<html>
+    <script>
+        window.addEventListener('message', async function (event) {
+
+            const filterFunction = new Function(event.data);
+            const filteredJSON = filterFunction();
+
+            event.source.window.postMessage(filteredJSON, event.origin);
+        });
+    </script>
+</html>

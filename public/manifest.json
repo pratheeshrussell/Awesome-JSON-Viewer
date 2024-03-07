@@ -32,8 +32,14 @@
     "default_icon": "images/icons/icon-16.png"
   },
   "permissions": [
-    "storage","tabs","contextMenus","scripting","activeTab"
+    "storage","tabs","contextMenus",
+    "scripting","activeTab"
   ],
+  "sandbox": {
+    "pages": [
+      "sandbox.html"
+    ]
+  },
   "optional_host_permissions": [
     "*://*/*"
   ],
@@ -44,6 +50,7 @@
         "/css/main.css",
         "/css/themes/mdn.css",
         "options.html",
+        "sandbox.html",
         "images/icons/gear.png"
       ],
       "matches": [

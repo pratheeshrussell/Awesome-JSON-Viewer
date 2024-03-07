@@ -33,6 +33,16 @@ const initApplication = () => {
         var body = document.createElement('body');
         document.querySelector('html').appendChild(body);
     }
+
+    setTimeout(() => {
+        console.log('creating sandbox')
+        var sandBoxIframe = document.createElement('iframe');
+        var iframeURL = chrome.runtime.getURL('/sandbox.html');
+        sandBoxIframe.setAttribute('src', iframeURL);
+        sandBoxIframe.setAttribute('id', 'sandbox');
+        sandBoxIframe.style.display = 'none';
+        document.body.appendChild(sandBoxIframe);
+    },1000)
 };
 
 const applyOptions = (options) => {
