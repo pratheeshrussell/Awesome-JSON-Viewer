@@ -7,8 +7,8 @@ const initApplication = () => {
     var customStyleTag = document.createElement('style');
     var customScriptTag = document.createElement('script');
     customStyleTag.id = 'custom-css';
-    var cssFilePath = chrome.extension.getURL('/css/main.css');
-    var jsFilePath = chrome.extension.getURL('/js/main.js');
+    var cssFilePath = chrome.runtime.getURL('/css/main.css');
+    var jsFilePath = chrome.runtime.getURL('/js/main.js');
     styleTag.setAttribute('href', cssFilePath);
     styleTag.rel = 'stylesheet';
     styleTag.type = 'text/css';
@@ -44,9 +44,9 @@ const applyOptions = (options) => {
     const customScriptNode = document.getElementById('custom-script');
     let cssURL = '';
     if (options.theme === 'default') {
-        cssURL = chrome.extension.getURL('/css/' + themes[options.theme]);
+        cssURL = chrome.runtime.getURL('/css/' + themes[options.theme]);
     } else {
-        cssURL = chrome.extension.getURL(
+        cssURL = chrome.runtime.getURL(
             '/css/themes/' + themes[options.theme],
         );
     }
@@ -55,8 +55,11 @@ const applyOptions = (options) => {
         styleNode.setAttribute('href', cssURL);
     }
     document.getElementById('custom-css').innerHTML = options.css;
-    customScriptNode.innerHTML =
-        'window.extensionOptions = ' + JSON.stringify(options, null, 2);
+
+    // customScriptNode.innerHTML =
+    //     'window.extensionOptions = ' + JSON.stringify(options, null, 2);
+    window.extensionOptions = JSON.stringify(options, null, 2);
+    window.optionIconURL = options.optionIconURL;
     setTimeout(
         (options) => {
             if (!!document.getElementById('option-menu')) {
@@ -75,24 +78,28 @@ const applyOptions = (options) => {
     );
 };
 
-const renderApplicationWithURLFiltering = (options) => {
+const initOpts = (opts) => {
+    initApplication();
+    applyOptions(opts);
+}
+
+const renderApplicationWithURLFiltering = (options, tabid) => {
     const urls = (options || {}).filteredURL || [];
     const isURLBlocked = urls.some((url) =>
         window.location.href.startsWith(url),
     );
 
     if (isURLBlocked || !isJSONResponse()) return;
+    chrome.runtime.sendMessage({ action: 'initialize_page_script', options:options });
 
-    initApplication();
-    applyOptions(options);
+    
 };
 
 const messageReceiver = () => {
-    chrome.runtime.onMessage.addListener((message) => {
+    chrome.runtime.onMessage.addListener((message,sender) => {
         switch (message.action) {
             case 'options_received':
-                window.extensionOptions = message.options;
-                renderApplicationWithURLFiltering(message.options);
+                renderApplicationWithURLFiltering(message.options, sender.id);
                 break;
 
             case 'settings_updated':

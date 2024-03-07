@@ -47,7 +47,7 @@ function sendMessage(action, message) {
             };
 
             if (message) {
-                messageObj.data = message;
+                messageObj["data"] = message;
             }
             chrome.tabs.sendMessage(tab.id, messageObj);
         });
@@ -69,19 +69,22 @@ function notify(message, type, duration) {
     }, maxVisibleTime);
 }
 
-const saveOptions = (value) => {
+const saveOptions = async (value) => {
     const data = JSON.stringify(value);
     try {
-        localStorage.setItem(dbName, data);
+        await chrome.storage.local.set({ [dbName]: data });
+        //window.localStorage.setItem(dbName, data);
     } catch (e) {
         console.error('Your browser support localStorage', e.message);
     }
 };
 
-const getOptions = (key) => {
+const getOptions = async (key) => {
     try {
-        const data = localStorage.getItem(key);
-        return JSON.parse(data);
+        // const data = window.localStorage.getItem(key);
+        const data = await chrome.storage.local.get(key);
+        //return JSON.parse(data);
+        return JSON.parse(data[key]);
     } catch (e) {
         console.error("Your browser doesn't support localStorage", e.message);
     }
@@ -100,15 +103,17 @@ const initCodeMirror = () => {
     );
 };
 
-const initOptions = () => {
+const initOptions = async () => {
     if (!window.cssEditor) {
         initCodeMirror();
     }
-    if (!getOptions(dbName)) {
-        saveOptions(options);
+
+    let savedOptions = await getOptions(dbName);
+    if (!savedOptions || Object.keys(savedOptions).length < 1) {
+        await saveOptions(options);
+        savedOptions = options;
     }
 
-    const savedOptions = getOptions(dbName);
     document.getElementById('theme').value = savedOptions.theme;
     window.cssEditor.setValue(savedOptions.css);
     if (savedOptions.collapsed == 1) {
@@ -119,7 +124,7 @@ const initOptions = () => {
 
     document.getElementById('save-options').addEventListener(
         'click',
-        (e) => {
+        async (e) => {
             e.preventDefault();
             const newOption = {
                 theme: 'default',
@@ -130,7 +135,7 @@ const initOptions = () => {
             }
             newOption.css = window.cssEditor.getValue();
             newOption.collapsed = document.getElementById('collapsed').checked ? 1 : 0;
-            saveOptions(newOption);
+            await saveOptions(newOption);
             sendMessage('settings_updated');
             notify('Changes have been saved');
         },
@@ -139,9 +144,9 @@ const initOptions = () => {
 
     document.getElementById('reset-options').addEventListener(
         'click',
-        (e) => {
+        async (e) => {
             e.preventDefault();
-            saveOptions(options);
+            await saveOptions(options);
             sendMessage('settings_updated');
             document.getElementById('theme').value = options.theme;
             document.getElementById('code').value = options.css;
@@ -180,8 +185,8 @@ function emptyNode(element) {
     }
 }
 
-function updateURLView(urls) {
-    var urlItems = urls || (getOptions(dbName) || {}).filteredURL;
+async function updateURLView(urls) {
+    var urlItems = urls || (await getOptions(dbName) || {}).filteredURL;
     if (urlItems) {
         var urlItemsContainer = document.querySelector(
             selectors.urlItemsContainer,
@@ -226,19 +231,19 @@ function initilizeTab() {
 function intializeURLInput() {
     document
         .querySelector(selectors.urlSaveBtn)
-        .addEventListener('click', () => {
+        .addEventListener('click', async () => {
             var url = document.querySelector(selectors.urlInput).value;
             var urlPattern = /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*(:[0-9]{1,5})?(\/.*)?$/;
             if (url && urlPattern.test(url)) {
                 url = url.trim();
-                var options = getOptions(dbName);
+                var options = await getOptions(dbName);
                 if (options) {
                     if (options.filteredURL) {
                         options.filteredURL.push(url);
                     } else {
                         options.filteredURL = [url];
                     }
-                    saveOptions(options);
+                    await saveOptions(options);
                     document.querySelector(selectors.urlInput).value = '';
                     updateURLView(options.filteredURL);
                     sendMessage('settings_updated');
@@ -254,16 +259,16 @@ function intializeURLInput() {
         });
 }
 
-function deleteURL(event) {
+async function deleteURL(event) {
     event.preventDefault();
     var deletableURL = event.currentTarget.getAttribute('data-url');
-    var options = getOptions(dbName);
+    var options = await getOptions(dbName);
     var filteredURL = (options || {}).filteredURL;
     options.filteredURL = filteredURL.filter(function (url) {
         return url !== deletableURL;
     });
 
-    saveOptions(options);
+    await saveOptions(options);
     updateURLView(options.filteredURL);
     sendMessage('settings_updated');
 }
@@ -282,7 +287,7 @@ function initEventListener() {
     initializeURLDeleteEventListner();
 }
 
-initOptions();
+await initOptions();
 
 document.body.onload = function () {
     updateURLView();
